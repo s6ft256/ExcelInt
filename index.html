@@ -14,21 +14,23 @@
     <!-- Google Fonts for a modern look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary-color: #4f46e5; /* Indigo 600 */
             --primary-hover: #4338ca; /* Indigo 700 */
-            --danger-color: #ef4444;
-            --success-color: #22c55e;
-            --background-color: #f9fafb; /* Gray 50 */
+            --danger-color: #ef4444; /* Red 500 */
+            --success-color: #22c55e; /* Green 500 */
+            --warning-color: #f97316; /* Orange 500 */
+            --background-color: #f8fafc; /* Slate 50 */
             --card-bg-color: #ffffff;
-            --text-color: #1e293b; /* Slate 800 */
+            --text-color: #334155; /* Slate 700 */
             --heading-color: #0f172a; /* Slate 900 */
-            --border-color: #e5e7eb; /* Gray 200 */
-            --subtle-text: #475569; /* Slate 600 */
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --border-color: #e2e8f0; /* Slate 200 */
+            --subtle-text: #64748b; /* Slate 500 */
+            --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             --border-radius: 0.75rem;
         }
 
@@ -44,14 +46,18 @@
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
+            background-image: linear-gradient(rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.85)), url('https://www.technogenie.com/images/upload/sections/jobs/23-ingenierie-petrochimie.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
         }
 
         #app-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 1400px;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 2rem;
         }
 
         .header {
@@ -60,15 +66,19 @@
         }
 
         .header h1 {
-            font-size: 2.25rem;
-            font-weight: 700;
+            font-size: 2.5rem;
+            font-weight: 800;
             color: var(--heading-color);
+            letter-spacing: -0.025em;
         }
 
         .header p {
             color: var(--subtle-text);
-            font-size: 1.1rem;
+            font-size: 1.125rem;
             margin-top: 0.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .main-tabs {
@@ -106,12 +116,22 @@
             box-shadow: var(--shadow);
             padding: 2rem;
             border: 1px solid var(--border-color);
+            transition: box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
         }
         .view-content {
             display: flex;
             flex-direction: column;
             gap: 2rem;
         }
+        
+        .upload-icon {
+            width: 48px; height: 48px; color: var(--primary-color);
+            opacity: 0.7; transition: opacity 0.2s;
+        }
+        #drop-zone:hover .upload-icon { opacity: 1; }
 
         #drop-zone {
             border: 2px dashed var(--border-color);
@@ -120,13 +140,23 @@
             text-align: center;
             cursor: pointer;
             transition: background-color 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
         }
         #drop-zone.drag-over {
             background-color: #eef2ff; /* Indigo 50 */
             border-color: var(--primary-color);
         }
+        #drop-zone.error {
+            border-color: var(--danger-color);
+            background-color: #fee2e2; /* Red 100 */
+        }
         #drop-zone p { color: var(--subtle-text); }
-        #drop-zone strong { color: var(--primary-color); }
+        #drop-zone strong { color: var(--primary-hover); font-weight: 600; }
+        #drop-zone .subtle-text { font-size: 0.875rem; }
 
         .preview-section h2 { 
             font-size: 1.5rem; 
@@ -150,19 +180,25 @@
         }
         
         .table-container { max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-top: 1.5rem; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
-        thead th { background-color: #f8fafc; position: sticky; top: 0; z-index: 10; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        thead th { 
+            background-color: #f8fafc; position: sticky; top: 0; z-index: 10;
+            font-weight: 600; color: var(--subtle-text); text-transform: uppercase;
+            font-size: 0.75rem; letter-spacing: 0.05em; border-bottom: 2px solid var(--border-color);
+        }
         tbody tr:last-child td { border-bottom: none; }
+        tbody tr:nth-of-type(even) { background-color: #f8fafc; }
+        tbody tr:hover { background-color: #f1f5f9; }
         .button-container { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: 1.5rem; }
         #target-table-container { color: var(--subtle-text); font-size: 0.9rem; text-align: left; flex-grow: 1; }
         .btn {
             display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
             border: none; border-radius: 0.5rem; font-weight: 600; font-size: 1rem;
-            cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease;
+            cursor: pointer; transition: all 0.2s ease;
         }
-        .btn:hover:not(:disabled) { transform: translateY(-1px); }
-        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .btn-primary { background-color: var(--primary-color); color: white; box-shadow: var(--shadow); }
         .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
         .btn:disabled { 
             background-color: #a5b4fc; /* Indigo 300 */
@@ -185,9 +221,13 @@
         .stat-card {
             background-color: var(--card-bg-color); border: 1px solid var(--border-color);
             padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow);
+            border-left-width: 5px;
         }
+        #sheets-stat-card { border-left-color: var(--primary-color); }
+        #rows-stat-card { border-left-color: var(--success-color); }
+        #cols-stat-card { border-left-color: var(--warning-color); }
         .stat-card h3 { color: var(--subtle-text); font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; }
-        .stat-card p { font-size: 2.25rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card p { font-size: 2.25rem; font-weight: 700; color: var(--heading-color); }
         
         .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
         .chart-container {
@@ -207,8 +247,17 @@
         .analysis-header h2 { color: var(--heading-color); }
         .analysis-controls { display: flex; gap: 1rem; flex-wrap: wrap; }
         .select-wrapper { display: flex; flex-direction: column; }
-        .select-wrapper label { font-size: 0.875rem; color: var(--subtle-text); margin-bottom: 0.25rem; font-weight: 500; }
-        .analysis-controls select { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background-color: #fff; font-family: inherit; font-size: 1rem; min-width: 200px; cursor: pointer; }
+        .select-wrapper label { font-size: 0.9rem; color: var(--subtle-text); margin-bottom: 0.35rem; font-weight: 600; }
+        .analysis-controls select {
+            padding: 0.75rem 3rem 0.75rem 1.25rem; border-radius: 0.5rem; border: 1px solid var(--border-color);
+            background-color: #fff; font-family: inherit; font-size: 1.1rem; min-width: 250px;
+            cursor: pointer; font-weight: 500;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
+        }
         #analysis-results { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; align-items: flex-start; }
         #analysis-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .analysis-stat-card { background-color: #f8fafc; border: 1px solid var(--border-color); padding: 1rem; border-radius: 0.5rem; }
@@ -247,15 +296,15 @@
             <div id="dashboard-view" class="view-content hidden">
                 <!-- Overview Stats & Charts -->
                 <div class="stats-grid">
-                    <div class="stat-card">
+                    <div id="sheets-stat-card" class="stat-card">
                         <h3>Total Sheets</h3>
                         <p id="total-sheets-stat">0</p>
                     </div>
-                    <div class="stat-card">
+                    <div id="rows-stat-card" class="stat-card">
                         <h3>Total Rows</h3>
                         <p id="total-rows-stat">0</p>
                     </div>
-                    <div class="stat-card">
+                    <div id="cols-stat-card" class="stat-card">
                         <h3>Total Columns</h3>
                         <p id="total-cols-stat">0</p>
                     </div>
@@ -299,7 +348,11 @@
                 <div class="card">
                     <div id="drop-zone">
                         <input type="file" id="file-input" accept=".xlsx,.csv,.xlsm" class="hidden">
-                        <p>Drag & drop your .xlsx, .csv, or .xlsm file here, or <strong>click to select a file</strong>.</p>
+                        <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3 17.25V6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5A2.25 2.25 0 0118.75 19.5H5.25A2.25 2.25 0 013 17.25z" />
+                        </svg>
+                        <p>Drag & drop your file here, or <strong>click to upload</strong>.</p>
+                        <small class="subtle-text">Supported formats: .xlsx, .csv, .xlsm</small>
                     </div>
                 </div>
                 <div id="preview-section" class="card hidden">
@@ -395,6 +448,9 @@
             { label: 'Numeric', value: 'numeric' }, { label: 'Boolean', value: 'boolean' },
             { label: 'Date', value: 'date' }, { label: 'Timestamp', value: 'timestamptz' },
         ];
+        
+        const DROP_ZONE_DEFAULT_HTML = `<svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3 17.25V6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5A2.25 2.25 0 0118.75 19.5H5.25A2.25 2.25 0 013 17.25z" /></svg><p>Drag & drop your file here, or <strong>click to upload</strong>.</p><small class="subtle-text">Supported formats: .xlsx, .csv, .xlsm</small>`;
+
 
         // --- 2. EVENT LISTENERS ---
         dropZone.addEventListener('click', () => fileInput.click());
@@ -415,22 +471,44 @@
 
         // --- 3. CORE LOGIC & FILE HANDLING ---
         
+        function showFileError(message, fileName = '') {
+            const finalMessage = fileName ? message.replace(/\$\{fileName\}/g, `<strong>"${fileName}"</strong>`) : message;
+            showAlert(finalMessage, 'danger');
+            dropZone.classList.add('error');
+            dropZone.innerHTML = DROP_ZONE_DEFAULT_HTML;
+            fileInput.value = '';
+        }
+
         function handleFile(file) {
             resetUI();
-            const extension = file.name.split('.').pop().toLowerCase();
-            const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            
+            const spinnerHTML = `<div class="spinner" style="width: 32px; height: 32px; border-width: 4px; border-top-color: var(--primary-color); border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent;"></div>`;
+            dropZone.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--subtle-text);">
+                                    ${spinnerHTML}
+                                    <p>Processing <strong>${file.name}</strong>...</p>
+                                  </div>`;
 
-            if (extension === 'xlsx' || extension === 'csv' || extension === 'xlsm') {
+            const extension = file.name.split('.').pop().toLowerCase();
+            
+            setTimeout(() => {
+                if (!['xlsx', 'csv', 'xlsm'].includes(extension)) {
+                    showFileError(`<strong>Unsupported File Type:</strong><br>File \${fileName} is not a supported format. Please upload a .xlsx, .csv, or .xlsm file.`, file.name);
+                    return;
+                }
+
                 const reader = new FileReader();
+                
                 reader.onload = (e) => {
                     try {
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
                         if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-                            showAlert(`Invalid ${extension.toUpperCase()} file: No data found.`, 'danger'); return;
+                            showFileError(`<strong>Invalid File:</strong><br>The file \${fileName} appears to be empty or does not contain any sheets.`, file.name);
+                            return;
                         }
                         
                         sheetsData = {};
+                        const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
                         workbook.SheetNames.forEach(sheetName => {
                             const worksheet = workbook.Sheets[sheetName];
                             const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
@@ -464,22 +542,27 @@
                                 }
                             }
                         });
-                        processParsedData();
+                        processParsedData(); 
+
                     } catch (error) {
-                        console.error(`Error parsing ${extension.toUpperCase()} file:`, error);
-                        showAlert(`Error parsing file: The file may be corrupted or in an unsupported format.`, 'danger');
+                        console.error(`Error parsing ${file.name}:`, error);
+                        showFileError(`<strong>Error Parsing File:</strong><br>Could not read \${fileName}. The file may be corrupted, password-protected, or in an unsupported format.`, file.name);
                     }
                 };
+
+                reader.onerror = () => {
+                    console.error(`Error reading file ${file.name}`);
+                    showFileError(`<strong>File Read Error:</strong><br>An error occurred while trying to read \${fileName}. Please ensure it is not damaged or locked.`, file.name);
+                };
+
                 reader.readAsArrayBuffer(file);
-            } else {
-                showAlert('Unsupported file type. Please upload a .xlsx, .csv, or .xlsm file.', 'danger');
-            }
+            }, 50);
         }
 
         function processParsedData() {
             const dataSheetNames = Object.keys(sheetsData);
             if (dataSheetNames.length === 0) {
-                showAlert('The uploaded file does not contain any data rows after cleaning.', 'danger');
+                showFileError('<strong>No Data Found:</strong><br>The uploaded file does not contain any data rows after cleaning empty rows and columns.');
                 return;
             }
 
@@ -553,7 +636,7 @@
 
             for (const sheetName of sheetNames) {
                 const dataToUpload = sheetsData[sheetName];
-                const collectionName = sanitizeIdentifier(sheetName);
+                const collectionName = sanitizeForFirestore(sheetName);
                 const metadata = sheetsMetadata[sheetName];
                 log(`Sheet '${sheetName}' ➔ Collection '${collectionName}': Preparing ${dataToUpload.length} records...`);
 
@@ -792,13 +875,34 @@
             for (const sheetName in allSheetsData) {
                 const data = allSheetsData[sheetName]; 
                 if (!data || data.length === 0) continue;
+                
                 const headers = Object.keys(data[0] || {});
-                sheetsMetadata[sheetName] = { columns: [], primaryKey: null };
+                const sanitizedNames = new Set();
+                const columnsMetadata = [];
+
                 headers.forEach(header => {
+                    let sanitizedName = sanitizeForFirestore(header);
+                    
+                    // Handle collisions to ensure unique field names
+                    let counter = 1;
+                    let finalName = sanitizedName;
+                    while (sanitizedNames.has(finalName)) {
+                        finalName = `${sanitizedName}_${counter}`;
+                        counter++;
+                    }
+                    sanitizedNames.add(finalName);
+                    
                     const values = data.map(row => row[header]);
                     const inferredType = inferTypeForColumn(values);
-                    sheetsMetadata[sheetName].columns.push({ name: header, sanitizedName: sanitizeIdentifier(header), userType: inferredType });
+                    
+                    columnsMetadata.push({ 
+                        name: header, 
+                        sanitizedName: finalName, // Store the unique sanitized name
+                        userType: inferredType 
+                    });
                 });
+                
+                sheetsMetadata[sheetName] = { columns: columnsMetadata, primaryKey: null };
             }
         }
 
@@ -846,15 +950,29 @@
         }
 
         function resetUI(isFullReset = false) {
-            previewSection.classList.add('hidden'); sheetTabsContainer.innerHTML = '';
+            previewSection.classList.add('hidden'); 
+            sheetTabsContainer.innerHTML = '';
             previewTable.innerHTML = '';
-            uploadBtn.disabled = true; sheetsData = {}; sheetsMetadata = {}; currentSheetName = '';
-            if (!isFullReset) alertContainer.innerHTML = '';
-            if (isFullReset) fileInput.value = '';
+            uploadBtn.disabled = true; 
+            sheetsData = {}; 
+            sheetsMetadata = {}; 
+            currentSheetName = '';
+            
+            dropZone.classList.remove('error');
+            if (!isFullReset) {
+                alertContainer.innerHTML = '';
+            }
+            
+            if (isFullReset) {
+                fileInput.value = '';
+                dropZone.innerHTML = DROP_ZONE_DEFAULT_HTML;
+            }
             
             dashboardTabBtn.disabled = true;
             switchView('ingest');
-            totalSheetsStat.textContent = '0'; totalRowsStat.textContent = '0'; totalColsStat.textContent = '0';
+            totalSheetsStat.textContent = '0'; 
+            totalRowsStat.textContent = '0'; 
+            totalColsStat.textContent = '0';
             if (rowsPieChart) { rowsPieChart.destroy(); rowsPieChart = null; }
             if (typesPieChart) { typesPieChart.destroy(); typesPieChart = null; }
 
@@ -862,21 +980,29 @@
             analysisResults.classList.add('hidden');
             analysisPlaceholder.classList.remove('hidden');
             if (analysisChart) { analysisChart.destroy(); analysisChart = null; }
-            sheetSelector.innerHTML = ''; columnSelector.innerHTML = '';
+            sheetSelector.innerHTML = ''; 
+            columnSelector.innerHTML = '';
         }
 
         function updateTargetTableInfo(sheetName) {
             if (sheetName) {
-                targetTableNameEl.textContent = sanitizeIdentifier(sheetName);
+                targetTableNameEl.textContent = sanitizeForFirestore(sheetName);
                 targetTableContainer.classList.remove('hidden');
             } else {
                 targetTableContainer.classList.add('hidden');
             }
         }
         
-        function sanitizeIdentifier(name) {
-            if (typeof name !== 'string') return '';
-            return name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_{2,}/g, '_').replace(/^_*|_*$/g, '').replace(/^[0-9]/, match => `_${match}`);
+        function sanitizeForFirestore(name) {
+            if (typeof name !== 'string' || name.trim() === '') return 'unnamed_field';
+            
+            const sanitized = name.trim().toLowerCase()
+                .replace(/[^a-z0-9_]/g, '_') // Replace invalid chars with _
+                .replace(/_{2,}/g, '_')     // Collapse consecutive underscores
+                .replace(/^_*|_*$/g, '')      // Trim leading/trailing underscores
+                .replace(/^[0-9]/, match => `_${match}`); // Prepend _ to leading numbers
+
+            return sanitized === '' ? 'unnamed_field' : sanitized;
         }
 
         // Final check on initialization
