@@ -1,0 +1,889 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to Database Ingest Tool</title>
+    
+    <!-- CDN for SheetJS (xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- CDN for Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    
+    <!-- Google Fonts for a modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #4f46e5; /* Indigo 600 */
+            --primary-hover: #4338ca; /* Indigo 700 */
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+            --background-color: #f9fafb; /* Gray 50 */
+            --card-bg-color: #ffffff;
+            --text-color: #1e293b; /* Slate 800 */
+            --heading-color: #0f172a; /* Slate 900 */
+            --border-color: #e5e7eb; /* Gray 200 */
+            --subtle-text: #475569; /* Slate 600 */
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --border-radius: 0.75rem;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--heading-color);
+        }
+
+        .header p {
+            color: var(--subtle-text);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .main-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .main-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--subtle-text);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .main-tab:hover:not(:disabled) {
+            color: var(--text-color);
+        }
+        .main-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .main-tab:disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+        }
+        .view-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        #drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        #drop-zone.drag-over {
+            background-color: #eef2ff; /* Indigo 50 */
+            border-color: var(--primary-color);
+        }
+        #drop-zone p { color: var(--subtle-text); }
+        #drop-zone strong { color: var(--primary-color); }
+
+        .preview-section h2 { 
+            font-size: 1.5rem; 
+            margin-bottom: 1rem; 
+            color: var(--heading-color); 
+        }
+
+        .sheet-tabs-container {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            margin-bottom: 1rem; border-bottom: 1px solid var(--border-color);
+        }
+        .sheet-tab {
+            padding: 0.5rem 1rem; border: none; background-color: transparent;
+            cursor: pointer; border-radius: 0.5rem 0.5rem 0 0; font-weight: 500;
+            color: var(--subtle-text); transition: background-color 0.2s, color 0.2s;
+            border-bottom: 3px solid transparent; margin-bottom: -1px;
+        }
+        .sheet-tab:hover { color: var(--text-color); }
+        .sheet-tab.active {
+            color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600;
+        }
+        
+        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-top: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+        thead th { background-color: #f8fafc; position: sticky; top: 0; z-index: 10; }
+        tbody tr:last-child td { border-bottom: none; }
+        .button-container { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+        #target-table-container { color: var(--subtle-text); font-size: 0.9rem; text-align: left; flex-grow: 1; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+            border: none; border-radius: 0.5rem; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
+        .btn:disabled { 
+            background-color: #a5b4fc; /* Indigo 300 */
+            cursor: not-allowed; 
+        }
+        .alert {
+            padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: none;
+            opacity: 0; transition: opacity 0.3s ease; line-height: 1.5; word-break: break-word;
+        }
+        .alert pre { white-space: pre-wrap; font-family: inherit; font-size: 0.9em; margin-top: 0.5rem; }
+        .alert.show { display: block; opacity: 1; }
+        .alert-success { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-danger { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-info { background-color: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Dashboard Styles */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .stat-card {
+            background-color: var(--card-bg-color); border: 1px solid var(--border-color);
+            padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow);
+        }
+        .stat-card h3 { color: var(--subtle-text); font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .stat-card p { font-size: 2.25rem; font-weight: 700; color: var(--primary-color); }
+        
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .chart-container {
+            background-color: var(--card-bg-color); border: 1px solid var(--border-color);
+            padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow);
+        }
+        .chart-container h3 { 
+            text-align: center; 
+            margin-bottom: 1.5rem; 
+            font-weight: 600;
+            color: var(--heading-color); 
+        }
+        .chart-container canvas { max-height: 350px; width: 100% !important; }
+
+        /* Column Analysis Styles */
+        .analysis-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+        .analysis-header h2 { color: var(--heading-color); }
+        .analysis-controls { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .select-wrapper { display: flex; flex-direction: column; }
+        .select-wrapper label { font-size: 0.875rem; color: var(--subtle-text); margin-bottom: 0.25rem; font-weight: 500; }
+        .analysis-controls select { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background-color: #fff; font-family: inherit; font-size: 1rem; min-width: 200px; cursor: pointer; }
+        #analysis-results { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; align-items: flex-start; }
+        #analysis-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .analysis-stat-card { background-color: #f8fafc; border: 1px solid var(--border-color); padding: 1rem; border-radius: 0.5rem; }
+        .analysis-stat-card h3 { font-size: 0.9rem; color: var(--subtle-text); font-weight: 500; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .analysis-stat-card p { font-size: 1.75rem; font-weight: 700; color: var(--heading-color); word-break: break-word; }
+        #analysis-chart-container { padding: 0; box-shadow: none; border: none; background: none; }
+        .placeholder-text { text-align: center; color: var(--subtle-text); padding: 2rem 0; font-style: italic; }
+
+        .hidden { display: none !important; }
+        @media (max-width: 900px) { #analysis-results { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .card { padding: 1.5rem; }
+            .header h1 { font-size: 1.75rem; }
+            .analysis-header { flex-direction: column; align-items: flex-start; }
+            #analysis-stats-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+        }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="app-container">
+        <header class="header">
+            <h1>Data Ingest Dashboard</h1>
+            <p>Upload, analyze, and send structured data to your backend.</p>
+        </header>
+
+        <nav class="main-tabs">
+            <button id="ingest-tab-btn" class="main-tab active">Ingest Tool</button>
+            <button id="dashboard-tab-btn" class="main-tab" disabled>Dashboard</button>
+        </nav>
+
+        <main>
+            <div id="alert-container"></div>
+
+            <div id="dashboard-view" class="view-content hidden">
+                <!-- Overview Stats & Charts -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Sheets</h3>
+                        <p id="total-sheets-stat">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Rows</h3>
+                        <p id="total-rows-stat">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Columns</h3>
+                        <p id="total-cols-stat">0</p>
+                    </div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Row Distribution by Sheet</h3>
+                        <canvas id="rows-pie-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Data Type Distribution</h3>
+                        <canvas id="types-pie-chart"></canvas>
+                    </div>
+                </div>
+                <!-- Column Analysis Section -->
+                <div id="column-analysis-section" class="card hidden">
+                    <div class="analysis-header">
+                        <h2>Column Analysis</h2>
+                        <div class="analysis-controls">
+                            <div class="select-wrapper">
+                                <label for="sheet-selector">Sheet</label>
+                                <select id="sheet-selector"></select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="column-selector">Column</label>
+                                <select id="column-selector"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="analysis-results" class="hidden">
+                        <div id="analysis-stats-grid"></div>
+                        <div id="analysis-chart-container">
+                            <canvas id="analysis-chart"></canvas>
+                        </div>
+                    </div>
+                    <p id="analysis-placeholder" class="placeholder-text">Select a sheet and column to see a detailed analysis.</p>
+                </div>
+            </div>
+
+            <div id="ingest-view" class="view-content">
+                <div class="card">
+                    <div id="drop-zone">
+                        <input type="file" id="file-input" accept=".xlsx,.csv,.xlsm" class="hidden">
+                        <p>Drag & drop your .xlsx, .csv, or .xlsm file here, or <strong>click to select a file</strong>.</p>
+                    </div>
+                </div>
+                <div id="preview-section" class="card hidden">
+                    <h2>Data Preview</h2>
+                    <div id="sheet-tabs" class="sheet-tabs-container"></div>
+                    <div class="table-container">
+                        <table id="preview-table"></table>
+                    </div>
+                    <div class="button-container">
+                        <div id="target-table-container" class="hidden">
+                            <p>This sheet will target collection: <strong id="target-table-name"></strong></p>
+                        </div>
+                        <button id="upload-btn" class="btn btn-primary" disabled>
+                            <span id="btn-text">Upload All Sheets</span>
+                            <div id="btn-spinner" class="spinner hidden"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
+
+    <script type="module">
+        // --- 0. FIREBASE SETUP ---
+        // IMPORTANT: Replace this with your own Firebase project configuration!
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPmfrpqGAp71ogoyb0nb_DzK5u2wusYrY",
+            authDomain: "dataext1-c403d.firebaseapp.com",
+            projectId: "dataext1-c403d",
+            storageBucket: "dataext1-c403d.firebasestorage.app",
+            messagingSenderId: "157022132435",
+            appId: "1:157022132435:web:8eecb29c7f699ec6de1c26",
+            measurementId: "G-PYHZ7SZ7T6"
+        };
+
+        // Initialize Firebase and Firestore
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            // We'll show a more prominent alert later if db is not initialized
+        }
+
+        // --- 1. CONFIGURATION & INITIALIZATION ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const previewSection = document.getElementById('preview-section');
+        const sheetTabsContainer = document.getElementById('sheet-tabs');
+        const previewTable = document.getElementById('preview-table');
+        const uploadBtn = document.getElementById('upload-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const alertContainer = document.getElementById('alert-container');
+        const targetTableContainer = document.getElementById('target-table-container');
+        const targetTableNameEl = document.getElementById('target-table-name');
+        
+        // View & Tab elements
+        const ingestTabBtn = document.getElementById('ingest-tab-btn');
+        const dashboardTabBtn = document.getElementById('dashboard-tab-btn');
+        const ingestView = document.getElementById('ingest-view');
+        const dashboardView = document.getElementById('dashboard-view');
+
+        // Dashboard elements
+        const totalSheetsStat = document.getElementById('total-sheets-stat');
+        const totalRowsStat = document.getElementById('total-rows-stat');
+        const totalColsStat = document.getElementById('total-cols-stat');
+        const rowsPieChartCtx = document.getElementById('rows-pie-chart').getContext('2d');
+        const typesPieChartCtx = document.getElementById('types-pie-chart').getContext('2d');
+        let rowsPieChart = null, typesPieChart = null;
+
+        // Column Analysis elements
+        const columnAnalysisSection = document.getElementById('column-analysis-section');
+        const sheetSelector = document.getElementById('sheet-selector');
+        const columnSelector = document.getElementById('column-selector');
+        const analysisResults = document.getElementById('analysis-results');
+        const analysisStatsGrid = document.getElementById('analysis-stats-grid');
+        const analysisChartCtx = document.getElementById('analysis-chart').getContext('2d');
+        const analysisPlaceholder = document.getElementById('analysis-placeholder');
+        let analysisChart = null;
+
+        let sheetsData = {};
+        let sheetsMetadata = {};
+        let currentSheetName = '';
+
+        const SUPPORTED_TYPES = [
+            { label: 'Text', value: 'text' }, { label: 'Integer', value: 'integer' },
+            { label: 'Numeric', value: 'numeric' }, { label: 'Boolean', value: 'boolean' },
+            { label: 'Date', value: 'date' }, { label: 'Timestamp', value: 'timestamptz' },
+        ];
+
+        // --- 2. EVENT LISTENERS ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files; if (files.length) handleFile(files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files; if (files.length) handleFile(files[0]);
+        });
+        uploadBtn.addEventListener('click', uploadAllSheets);
+        ingestTabBtn.addEventListener('click', () => switchView('ingest'));
+        dashboardTabBtn.addEventListener('click', () => switchView('dashboard'));
+        sheetSelector.addEventListener('change', updateColumnSelector);
+        columnSelector.addEventListener('change', analyzeCurrentColumn);
+
+        // --- 3. CORE LOGIC & FILE HANDLING ---
+        
+        function handleFile(file) {
+            resetUI();
+            const extension = file.name.split('.').pop().toLowerCase();
+            const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+
+            if (extension === 'xlsx' || extension === 'csv' || extension === 'xlsm') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                            showAlert(`Invalid ${extension.toUpperCase()} file: No data found.`, 'danger'); return;
+                        }
+                        
+                        sheetsData = {};
+                        workbook.SheetNames.forEach(sheetName => {
+                            const worksheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+
+                            const nonEmptyRows = jsonData.filter(row => 
+                                Object.values(row).some(val => val !== null && val !== undefined && String(val).trim() !== '')
+                            );
+
+                            if (nonEmptyRows.length > 0) {
+                                const headers = Object.keys(nonEmptyRows[0]);
+                                const emptyColumns = new Set(headers.filter(header => 
+                                    nonEmptyRows.every(row => {
+                                        const value = row[header];
+                                        return value === null || value === undefined || String(value).trim() === '';
+                                    })
+                                ));
+
+                                const finalData = nonEmptyRows.map(row => {
+                                    const newRow = {};
+                                    for (const key in row) {
+                                        if (!emptyColumns.has(key)) {
+                                            newRow[key] = row[key];
+                                        }
+                                    }
+                                    return newRow;
+                                });
+                                
+                                if (finalData.length > 0 && Object.keys(finalData[0]).length > 0) {
+                                    const effectiveSheetName = extension === 'csv' ? fileNameWithoutExt : sheetName;
+                                    sheetsData[effectiveSheetName] = finalData;
+                                }
+                            }
+                        });
+                        processParsedData();
+                    } catch (error) {
+                        console.error(`Error parsing ${extension.toUpperCase()} file:`, error);
+                        showAlert(`Error parsing file: The file may be corrupted or in an unsupported format.`, 'danger');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                showAlert('Unsupported file type. Please upload a .xlsx, .csv, or .xlsm file.', 'danger');
+            }
+        }
+
+        function processParsedData() {
+            const dataSheetNames = Object.keys(sheetsData);
+            if (dataSheetNames.length === 0) {
+                showAlert('The uploaded file does not contain any data rows after cleaning.', 'danger');
+                return;
+            }
+
+            initializeMetadata(sheetsData);
+            renderDashboardOverview(sheetsData, sheetsMetadata);
+            initializeColumnAnalysis();
+
+            currentSheetName = dataSheetNames[0];
+            renderSheetTabs(dataSheetNames);
+            renderPreviewTable(sheetsData[currentSheetName]);
+            updateTargetTableInfo(currentSheetName);
+            
+            previewSection.classList.remove('hidden');
+            uploadBtn.disabled = false;
+            dashboardTabBtn.disabled = false;
+            switchView('ingest');
+        }
+
+        function renderSheetTabs(sheetNames) {
+            sheetTabsContainer.innerHTML = '';
+            sheetNames.forEach(name => {
+                const tabBtn = document.createElement('button');
+                tabBtn.className = 'sheet-tab';
+                tabBtn.textContent = name;
+                if (name === currentSheetName) tabBtn.classList.add('active');
+                tabBtn.addEventListener('click', () => switchSheet(name));
+                sheetTabsContainer.appendChild(tabBtn);
+            });
+        }
+
+        function switchSheet(sheetName) {
+            if (sheetName === currentSheetName) return;
+            currentSheetName = sheetName;
+            renderPreviewTable(sheetsData[currentSheetName]);
+            updateTargetTableInfo(sheetName);
+            document.querySelectorAll('.sheet-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent === sheetName);
+            });
+        }
+
+        function renderPreviewTable(data) {
+            if (!data || data.length === 0) {
+                previewTable.innerHTML = '<thead><tr><th>No data to display.</th></tr></thead>'; return;
+            }
+            const headers = Object.keys(data[0]);
+            const thead = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+            const tbody = `<tbody>${data.slice(0, 100).map(row => `<tr>${headers.map(h => `<td>${row[h] !== null && row[h] !== undefined ? row[h] : ''}</td>`).join('')}</tr>`).join('')}</tbody>`;
+            previewTable.innerHTML = thead + tbody;
+        }
+
+        async function uploadAllSheets() {
+            if (!db) {
+                showAlert('Firestore is not initialized. Please check your Firebase configuration and ensure you have an internet connection.', 'danger');
+                return;
+            }
+
+            const sheetNames = Object.keys(sheetsData);
+            if (sheetNames.length === 0) {
+                showAlert('No data available to upload.', 'danger'); return;
+            }
+
+            setLoadingState(true);
+            alertContainer.innerHTML = '';
+            const logContainer = document.createElement('div');
+            logContainer.className = 'alert alert-info show'; logContainer.style.maxHeight = '300px';
+            logContainer.style.overflowY = 'auto';
+            alertContainer.appendChild(logContainer);
+            const log = (message) => { logContainer.innerHTML += message + '<br>'; logContainer.scrollTop = logContainer.scrollHeight; };
+            log(`<strong>Starting upload for ${sheetNames.length} sheet(s) to Firestore...</strong>`);
+            let successCount = 0, errorCount = 0;
+
+            for (const sheetName of sheetNames) {
+                const dataToUpload = sheetsData[sheetName];
+                const collectionName = sanitizeIdentifier(sheetName);
+                const metadata = sheetsMetadata[sheetName];
+                log(`Sheet '${sheetName}' ➔ Collection '${collectionName}': Preparing ${dataToUpload.length} records...`);
+
+                try {
+                    const sanitizedData = dataToUpload.map(row => {
+                        const newRow = {};
+                        metadata.columns.forEach(col => {
+                           if (col.sanitizedName) {
+                               const value = row[col.name];
+                               newRow[col.sanitizedName] = (value === undefined || value === null) ? null : value;
+                           }
+                        });
+                        return newRow;
+                    });
+
+                    // Firestore batch writes are limited to 500 operations.
+                    const BATCH_SIZE = 500;
+                    for (let i = 0; i < sanitizedData.length; i += BATCH_SIZE) {
+                        const batch = db.batch();
+                        const chunk = sanitizedData.slice(i, i + BATCH_SIZE);
+                        
+                        log(`Uploading batch ${Math.floor(i / BATCH_SIZE) + 1}... (${chunk.length} records)`);
+                        
+                        chunk.forEach(rowData => {
+                            const docRef = db.collection(collectionName).doc(); // Auto-generate document ID
+                            batch.set(docRef, rowData);
+                        });
+                        
+                        await batch.commit();
+                    }
+                    
+                    log(`✅ Success: All ${dataToUpload.length} records for sheet '${sheetName}' uploaded to collection '${collectionName}'.`);
+                    successCount++;
+                } catch (error) {
+                    console.error(`Error processing sheet ${sheetName}:`, error);
+                    let errorMessage = error.message || 'An unexpected error occurred.';
+                    log(`❌ Error on sheet '${sheetName}': ${errorMessage}`);
+                    errorCount++;
+                }
+            }
+            log(`<strong>Upload complete. Successful sheets: ${successCount}, Failed sheets: ${errorCount}.</strong>`);
+            if (errorCount > 0) logContainer.classList.replace('alert-info', 'alert-danger');
+            else logContainer.classList.replace('alert-info', 'alert-success');
+            setLoadingState(false);
+            if (errorCount === 0) resetUI(true);
+        }
+        
+        // --- 4. DASHBOARD FUNCTIONS ---
+
+        function renderDashboardOverview(sData, sMetadata) {
+            const sheetNames = Object.keys(sData);
+            const totalSheets = sheetNames.length;
+            const totalRows = sheetNames.reduce((sum, name) => sum + sData[name].length, 0);
+            const totalCols = sheetNames.reduce((sum, name) => sum + sMetadata[name].columns.length, 0);
+
+            totalSheetsStat.textContent = totalSheets;
+            totalRowsStat.textContent = totalRows.toLocaleString();
+            totalColsStat.textContent = totalCols.toLocaleString();
+
+            const chartColors = ['#4f46e5', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b', '#34d399', '#6d28d9'];
+
+            const rowsData = {
+                labels: sheetNames,
+                datasets: [{ data: sheetNames.map(name => sData[name].length), backgroundColor: chartColors, hoverOffset: 4 }]
+            };
+            if (rowsPieChart) rowsPieChart.destroy();
+            rowsPieChart = new Chart(rowsPieChartCtx, { type: 'pie', data: rowsData, options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 12 } } } } } });
+            
+            const typeCounts = {};
+            Object.values(sMetadata).forEach(sheet => { sheet.columns.forEach(col => { typeCounts[col.userType] = (typeCounts[col.userType] || 0) + 1; }); });
+            const typeLabels = Object.keys(typeCounts);
+            const typesData = {
+                labels: SUPPORTED_TYPES.filter(t => typeLabels.includes(t.value)).map(t => t.label),
+                datasets: [{ data: SUPPORTED_TYPES.filter(t => typeLabels.includes(t.value)).map(t => typeCounts[t.value]), backgroundColor: chartColors, hoverOffset: 4 }]
+            };
+            if (typesPieChart) typesPieChart.destroy();
+            typesPieChart = new Chart(typesPieChartCtx, { type: 'pie', data: typesData, options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 12 } } } } } });
+        }
+
+        function initializeColumnAnalysis() {
+            columnAnalysisSection.classList.remove('hidden');
+            const sheetNames = Object.keys(sheetsData);
+            sheetSelector.innerHTML = sheetNames.map(name => `<option value="${name}">${name}</option>`).join('');
+            if (sheetNames.length > 0) {
+                sheetSelector.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        function updateColumnSelector() {
+            const selectedSheet = sheetSelector.value;
+            const columns = sheetsMetadata[selectedSheet]?.columns || [];
+            columnSelector.innerHTML = columns.map(col => `<option value="${col.name}">${col.name}</option>`).join('');
+            if (columns.length > 0) {
+                columnSelector.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        function analyzeCurrentColumn() {
+            const sheetName = sheetSelector.value;
+            const columnName = columnSelector.value;
+            if (!sheetName || !columnName) {
+                analysisResults.classList.add('hidden');
+                analysisPlaceholder.classList.remove('hidden');
+                return;
+            }
+
+            const columnData = sheetsData[sheetName].map(row => row[columnName]);
+            const columnMeta = sheetsMetadata[sheetName].columns.find(c => c.name === columnName);
+
+            if (!columnMeta) return;
+            const columnType = columnMeta.userType;
+            
+            renderAnalysisStats(columnData, columnType);
+            renderAnalysisChart(columnData, columnType, columnName);
+            
+            analysisResults.classList.remove('hidden');
+            analysisPlaceholder.classList.add('hidden');
+        }
+        
+        function renderAnalysisStats(data, type) {
+            const createCard = (title, value) => `<div class="analysis-stat-card"><h3>${title}</h3><p>${value}</p></div>`;
+            let statsHtml = '';
+            
+            const total = data.length;
+            const non_empty = data.filter(d => d !== null && d !== undefined && String(d).trim() !== '').length;
+            const unique = new Set(data.filter(d => d !== null && d !== undefined)).size;
+            
+            statsHtml += createCard('Total Rows', total.toLocaleString());
+            statsHtml += createCard('Non-Empty', non_empty.toLocaleString());
+            statsHtml += createCard('Unique Values', unique.toLocaleString());
+            statsHtml += createCard('Empty Rows', (total - non_empty).toLocaleString());
+            
+            if (type === 'integer' || type === 'numeric') {
+                const numbers = data.map(Number).filter(n => !isNaN(n));
+                if (numbers.length > 0) {
+                    const sum = numbers.reduce((a, b) => a + b, 0);
+                    const avg = sum / numbers.length;
+                    statsHtml += createCard('Sum', sum.toLocaleString());
+                    statsHtml += createCard('Mean', avg.toFixed(2));
+                    statsHtml += createCard('Min', Math.min(...numbers).toLocaleString());
+                    statsHtml += createCard('Max', Math.max(...numbers).toLocaleString());
+                }
+            } else if (type === 'text') {
+                const counts = data.reduce((acc, val) => { acc[val] = (acc[val] || 0) + 1; return acc; }, {});
+                const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+                if (sorted.length > 0 && sorted[0][0]) statsHtml += createCard('Most Frequent', sorted[0][0]);
+            }
+            analysisStatsGrid.innerHTML = statsHtml;
+        }
+
+        function renderAnalysisChart(data, type, columnName) {
+            if (analysisChart) analysisChart.destroy();
+            
+            const chartColors = ['#4f46e5', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b', '#34d399', '#6d28d9'];
+            let chartConfig = { options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } };
+
+            switch(type) {
+                case 'integer':
+                case 'numeric':
+                    const numbers = data.map(Number).filter(n => !isNaN(n));
+                    if(numbers.length === 0) { analysisChart = null; return; }
+                    const min = Math.min(...numbers);
+                    const max = Math.max(...numbers);
+                    const binCount = Math.min(10, Math.floor(Math.sqrt(numbers.length)));
+                    const binWidth = (max - min) / binCount || 1;
+                    const bins = Array(binCount).fill(0);
+                    const labels = [];
+                    for(let i = 0; i < binCount; i++) {
+                        const binStart = min + i * binWidth;
+                        labels.push(`${binStart.toLocaleString()}-${(binStart + binWidth).toLocaleString()}`);
+                    }
+                    numbers.forEach(num => {
+                        const binIndex = Math.min(Math.floor((num - min) / binWidth), binCount - 1);
+                        if (bins[binIndex] !== undefined) bins[binIndex]++;
+                    });
+                    chartConfig.type = 'bar';
+                    chartConfig.data = { labels, datasets: [{ label: 'Count', data: bins, backgroundColor: chartColors[0] }] };
+                    chartConfig.options.scales = { y: { beginAtZero: true, title: { display: true, text: 'Frequency' } } };
+                    break;
+                
+                case 'text':
+                    const counts = data.reduce((acc, val) => { if(val) acc[val] = (acc[val] || 0) + 1; return acc; }, {});
+                    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+                    chartConfig.type = 'bar';
+                    chartConfig.data = {
+                        labels: sorted.map(item => item[0]),
+                        datasets: [{ label: 'Count', data: sorted.map(item => item[1]), backgroundColor: chartColors[1] }]
+                    };
+                    chartConfig.options.indexAxis = 'y';
+                    chartConfig.options.scales = { x: { beginAtZero: true, title: { display: true, text: 'Frequency' } } };
+                    break;
+
+                case 'boolean':
+                    const boolCounts = data.reduce((acc, val) => { 
+                        const v = String(val).toLowerCase();
+                        if (['true', 't', '1', 'yes'].includes(v)) acc.true++;
+                        else if (['false', 'f', '0', 'no'].includes(v)) acc.false++;
+                        return acc;
+                    }, {true: 0, false: 0});
+                    chartConfig.type = 'pie';
+                    chartConfig.data = { labels: ['True', 'False'], datasets: [{ data: [boolCounts.true, boolCounts.false], backgroundColor: [chartColors[0], chartColors[4]] }] };
+                    chartConfig.options.plugins.legend.display = true;
+                    chartConfig.options.plugins.legend.position = 'top';
+                    break;
+
+                case 'date':
+                case 'timestamptz':
+                    const dateCounts = data.reduce((acc, val) => {
+                        try {
+                            const d = new Date(typeof val === 'number' ? (val - 25569) * 86400 * 1000 : val);
+                            if (!isNaN(d)) {
+                                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                                acc[key] = (acc[key] || 0) + 1;
+                            }
+                        } catch(e) {}
+                        return acc;
+                    }, {});
+                    const sortedDates = Object.entries(dateCounts).sort((a,b) => a[0].localeCompare(b[0]));
+                    chartConfig.type = 'bar';
+                    chartConfig.data = {
+                        labels: sortedDates.map(d => d[0]),
+                        datasets: [{ label: 'Count', data: sortedDates.map(d => d[1]), backgroundColor: chartColors[3] }]
+                    };
+                    chartConfig.options.scales = { y: { beginAtZero: true, title: { display: true, text: 'Record Count' } }, x: { title: { display: true, text: 'Month' } } };
+                    break;
+                default:
+                    analysisChart = null; return;
+            }
+            analysisChart = new Chart(analysisChartCtx, chartConfig);
+        }
+
+        // --- 5. UI & UTILITY HELPER FUNCTIONS ---
+        
+        function initializeMetadata(allSheetsData) {
+            sheetsMetadata = {};
+            for (const sheetName in allSheetsData) {
+                const data = allSheetsData[sheetName]; 
+                if (!data || data.length === 0) continue;
+                const headers = Object.keys(data[0] || {});
+                sheetsMetadata[sheetName] = { columns: [], primaryKey: null };
+                headers.forEach(header => {
+                    const values = data.map(row => row[header]);
+                    const inferredType = inferTypeForColumn(values);
+                    sheetsMetadata[sheetName].columns.push({ name: header, sanitizedName: sanitizeIdentifier(header), userType: inferredType });
+                });
+            }
+        }
+
+        function inferTypeForColumn(values) {
+            let isInteger = true, isNumeric = true, isBoolean = true;
+            const sample = values.slice(0, 50).filter(v => v !== null && v !== undefined && String(v).trim() !== '');
+            if (sample.length === 0) return 'text';
+            for (const val of sample) {
+                const sVal = String(val);
+                if (isInteger && !/^-?\d+$/.test(sVal)) isInteger = false;
+                if (isNumeric && isNaN(Number(val))) isNumeric = false;
+                if (isBoolean && !['true', 'false', 't', 'f', 'yes', 'no', '1', '0'].includes(sVal.toLowerCase())) isBoolean = false;
+            }
+            if (isInteger) return 'integer'; if (isNumeric) return 'numeric'; if (isBoolean) return 'boolean';
+            const isDateParsable = sample.every(v => !isNaN(Date.parse(String(v))) && isNaN(Number(v)));
+            if (isDateParsable) {
+                const hasTimeComponent = sample.some(v => String(v).match(/\d{1,2}:\d{2}/));
+                return hasTimeComponent ? 'timestamptz' : 'date';
+            }
+            return 'text';
+        }
+
+        function showAlert(message, type = 'danger') {
+            alertContainer.innerHTML = '';
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`; alertDiv.innerHTML = message;
+            alertContainer.appendChild(alertDiv);
+            void alertDiv.offsetWidth; alertDiv.classList.add('show');
+        }
+
+        function setLoadingState(isLoading) {
+            uploadBtn.disabled = isLoading;
+            btnText.classList.toggle('hidden', isLoading);
+            btnSpinner.classList.toggle('hidden', !isLoading);
+        }
+
+        function switchView(viewName) {
+            if (viewName === 'dashboard') {
+                dashboardView.classList.remove('hidden'); ingestView.classList.add('hidden');
+                dashboardTabBtn.classList.add('active'); ingestTabBtn.classList.remove('active');
+            } else { // 'ingest'
+                ingestView.classList.remove('hidden'); dashboardView.classList.add('hidden');
+                ingestTabBtn.classList.add('active'); dashboardTabBtn.classList.remove('active');
+            }
+        }
+
+        function resetUI(isFullReset = false) {
+            previewSection.classList.add('hidden'); sheetTabsContainer.innerHTML = '';
+            previewTable.innerHTML = '';
+            uploadBtn.disabled = true; sheetsData = {}; sheetsMetadata = {}; currentSheetName = '';
+            if (!isFullReset) alertContainer.innerHTML = '';
+            if (isFullReset) fileInput.value = '';
+            
+            dashboardTabBtn.disabled = true;
+            switchView('ingest');
+            totalSheetsStat.textContent = '0'; totalRowsStat.textContent = '0'; totalColsStat.textContent = '0';
+            if (rowsPieChart) { rowsPieChart.destroy(); rowsPieChart = null; }
+            if (typesPieChart) { typesPieChart.destroy(); typesPieChart = null; }
+
+            columnAnalysisSection.classList.add('hidden');
+            analysisResults.classList.add('hidden');
+            analysisPlaceholder.classList.remove('hidden');
+            if (analysisChart) { analysisChart.destroy(); analysisChart = null; }
+            sheetSelector.innerHTML = ''; columnSelector.innerHTML = '';
+        }
+
+        function updateTargetTableInfo(sheetName) {
+            if (sheetName) {
+                targetTableNameEl.textContent = sanitizeIdentifier(sheetName);
+                targetTableContainer.classList.remove('hidden');
+            } else {
+                targetTableContainer.classList.add('hidden');
+            }
+        }
+        
+        function sanitizeIdentifier(name) {
+            if (typeof name !== 'string') return '';
+            return name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_{2,}/g, '_').replace(/^_*|_*$/g, '').replace(/^[0-9]/, match => `_${match}`);
+        }
+
+        // Final check on initialization
+        if (!db) {
+            showAlert('Failed to initialize Firebase. Please provide your project configuration in <code>index.html</code> and ensure the Firebase SDKs are loaded correctly.', 'danger');
+        }
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
