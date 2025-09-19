@@ -1,4 +1,4 @@
 {
-  "name": "soft1",
-  "description": "A client-side web application to upload Excel files, preview data, and insert it into a Supabase database table with a secure, modern UI."
+  "name": "data-ingest-dashboard",
+  "description": "A client-side web application to upload Excel/CSV files, preview data, and insert it into Google Firestore with interactive analytics dashboard."
 }

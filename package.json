@@ -1,8 +1,9 @@
 {
-  "name": "soft1",
+  "name": "data-ingest-dashboard",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "A client-side web application to upload Excel/CSV files and send data to Google Firestore",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,7 +14,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
